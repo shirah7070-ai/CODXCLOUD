@@ -1,12 +1,9 @@
-# codxcloud_fullwidth_cards.py
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import messagebox
-from tkinter import ttk as native_ttk
-from PIL import Image, ImageTk
-import os
 
+# Global Data (Simulated Database)
 USERS = {"admin": "admin123", "user1": "password1"}
 BOOKS = {
     "001": {"title": "Python Programming", "author": "John Smith", "available": True, "borrowed_by": None},
@@ -25,6 +22,7 @@ class CodXCloudApp:
         self.root.title("CodXCloud - Fullwidth Cards")
         self.root.geometry("1200x800")
         self.current_user = None
+        self._card_imgs = [] 
 
         self._build_header()
         self._build_content_area()
@@ -32,6 +30,7 @@ class CodXCloudApp:
         self.create_login_window()
 
     def _build_header(self):
+        """Sets up the top header with title and menu."""
         header = ttk.Frame(self.root, padding=8)
         header.pack(side="top", fill="x")
 
@@ -52,14 +51,16 @@ class CodXCloudApp:
         menu_btn["menu"] = menu
 
     def _build_content_area(self):
+        """Sets up the main content frame."""
         self.content_frame = ttk.Frame(self.root, padding=20)
         self.content_frame.pack(fill="both", expand=True)
-        self.show_view("search")
 
     def clear_content(self):
+        """Destroys all widgets in the content frame."""
         for w in self.content_frame.winfo_children(): w.destroy()
 
     def show_view(self, view_name):
+        """Switches the main application view."""
         self.clear_content()
         if view_name == "search": self._view_search_cards()
         elif view_name == "borrow": self._view_borrow_return()
@@ -70,6 +71,9 @@ class CodXCloudApp:
     # Search Card Layout (full width)
     # -------------------------
     def _view_search_cards(self):
+        """Displays the book search interface with responsive cards."""
+        
+        # --- 1. Top Search Bar ---
         top = ttk.Frame(self.content_frame)
         top.pack(fill="x", pady=(0,10))
         ttk.Label(top, text="Search Books", font=("Helvetica", 20, "bold"), bootstyle="info").pack(side="left", padx=15)
@@ -78,32 +82,40 @@ class CodXCloudApp:
         search_type = tk.StringVar(value="Title")
         ttk.Radiobutton(top, text="Title", variable=search_type, value="Title", bootstyle="info-toolbutton").pack(side="left", padx=4)
         ttk.Radiobutton(top, text="Author", variable=search_type, value="Author", bootstyle="info-toolbutton").pack(side="left", padx=4)
-        ttk.Button(top, text="Search", bootstyle="primary",
-                   command=lambda: perform_search(search_entry.get(), search_type.get())).pack(side="left", padx=10)
-
-        # scrollable area for cards
+        
+        # --- 2. Scrollable Area Setup ---
         container = ttk.Frame(self.content_frame)
         container.pack(fill="both", expand=True)
         canvas = tk.Canvas(container, highlightthickness=0)
         scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
+        
+        # 'scrollable' is the frame that holds the cards, which lives inside the canvas
+        scrollable = ttk.Frame(canvas) 
+        
+        # Configure scrolling and place widgets
         scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        
+        # State tracker for card grid layout
+        card_counter = {"i": 0}
 
-        self._card_imgs = []
+        # --- 3. Nested Helper Functions ---
 
         def clear_cards():
+            """Clears all cards from the scrollable frame."""
             for c in scrollable.winfo_children(): c.destroy()
             self._card_imgs.clear()
 
         def borrow_book(bid, btn):
+            """Handles the logic for borrowing a book."""
             book = BOOKS.get(bid)
-            if not self.current_user:
+            if not self.current_user: 
                 show_error("Error", "Please login first")
                 return
+            
             if book and book["available"]:
                 book["available"] = False
                 book["borrowed_by"] = self.current_user
@@ -112,128 +124,249 @@ class CodXCloudApp:
             else:
                 show_error("Error", "Not available")
 
+        # --- UPDATED make_card function with bigger design ---
         def make_card(parent, bid, book):
-            # outer card full width (small side padding; fills the main content width)
-            card = ttk.Frame(parent, padding=(20, 22), relief="raised", bootstyle="secondary")
-            card.pack(fill="x", pady=18, padx=20)  # fills horizontally almost to screen edge
+            """Creates and places a single book card with large styling."""
+            r = card_counter["i"] // 2   # row number
+            c = card_counter["i"] % 2    # column 0 or 1
 
-            # left: image (placeholder)
-            left = ttk.Frame(card, width=140)
-            left.pack(side="left", padx=(0,20))
-            placeholder = tk.Canvas(left, width=120, height=160, highlightthickness=0)
-            placeholder.create_rectangle(0,0,120,160, fill="#f1f1f1", outline="#999999")
-            placeholder.create_text(60,80, text="No\nImage", justify="center")
+            # BIGGER card frame
+            card = ttk.Frame(
+                parent, 
+                padding=(30, 30), # Increased padding
+                relief="raised", 
+                bootstyle="secondary"
+            )
+            card.grid(
+                row=r, column=c, 
+                padx=30, pady=30, # Increased grid padding/spacing
+                sticky="nwe"
+            )
+
+            # allow even expansion
+            parent.grid_columnconfigure(0, weight=1)
+            parent.grid_columnconfigure(1, weight=1)
+
+            # LEFT section (BIG placeholder image)
+            left = ttk.Frame(card, width=200) # Increased width
+            left.pack(side="left", padx=(0, 30))
+
+            placeholder = tk.Canvas(left, width=150, height=220, highlightthickness=0) # Increased size
+            placeholder.create_rectangle(0, 0, 150, 220, fill="#f1f1f1", outline="#999999")
+            placeholder.create_text(75, 110, text="No\nImage", justify="center", font=("Helvetica", 12)) # Font added
             placeholder.pack()
 
-            # middle: details (EXPAND)
+            # MIDDLE text (BIGGER fonts)
             middle = ttk.Frame(card)
             middle.pack(side="left", fill="both", expand=True)
-            ttk.Label(middle, text=book["title"], font=("Helvetica", 16, "bold")).pack(anchor="w")
-            ttk.Label(middle, text=f"Author: {book['author']}", font=("Helvetica", 11)).pack(anchor="w", pady=(6,0))
-            st = "Available" if book["available"] else f"Borrowed by {book['borrowed_by']}"
-            ttk.Label(middle, text=f"Status: {st}", font=("Helvetica", 11)).pack(anchor="w", pady=(10,0))
 
-            # right: borrow button aligned right-center
-            right = ttk.Frame(card, width=140)
+            ttk.Label(middle, text=book["title"], font=("Helvetica", 20, "bold")).pack(anchor="w") # Bigger title font
+            ttk.Label(middle, text=f"Author: {book['author']}", font=("Helvetica", 14)).pack(anchor="w", pady=(10, 0)) # Bigger text font
+
+            st = "Available" if book["available"] else f"Borrowed by {book['borrowed_by']}"
+            ttk.Label(middle, text=f"Status: {st}", font=("Helvetica", 14)).pack(anchor="w", pady=(14, 0)) # Bigger text font
+
+            # RIGHT section with BIGGER button
+            right = ttk.Frame(card, width=200) # Increased width
             right.pack(side="right", fill="y")
+
             right_inner = ttk.Frame(right)
             right_inner.place(relx=0.5, rely=0.5, anchor="center")
-            borrow_btn = ttk.Button(right_inner, text="Borrow", width=12, bootstyle="danger")
+
+            borrow_btn = ttk.Button(
+                right_inner, 
+                text="Borrow",
+                width=16, # Increased button width
+                bootstyle="danger"
+            )
+
             if not book["available"]:
-                borrow_btn.configure(text="Not Available", state="disabled", bootstyle="secondary")
-            borrow_btn.pack()
-            borrow_btn.configure(command=lambda: borrow_book(bid, borrow_btn))
+                borrow_btn.configure(
+                    text="Not Available", 
+                    state="disabled", 
+                    bootstyle="secondary"
+                )
+
+            borrow_btn.pack(pady=10) # Added vertical button padding
+            # Correctly referencing the nested borrow_book function
+            borrow_btn.configure(command=lambda b=borrow_btn: borrow_book(bid, b))
+
+            card_counter["i"] += 1
+        # ----------------------------------------------------
 
         def perform_search(q, mode):
+            """Filters the BOOKS data and renders the search results."""
             clear_cards()
+            card_counter["i"] = 0 # Reset card counter for fresh grid layout
             q = (q or "").strip().lower()
             results = []
+            
+            # Filtering logic
             for k,v in BOOKS.items():
-                if not q or (mode=="Title" and q in v["title"].lower()) or (mode=="Author" and q in v["author"].lower()):
+                if not q or \
+                   (mode=="Title" and q in v["title"].lower()) or \
+                   (mode=="Author" and q in v["author"].lower()):
                     results.append((k,v))
+            
+            # Display results or "No results" message
             if not results:
                 ttk.Label(scrollable, text="No results found.", font=("Helvetica", 12)).pack(pady=20)
                 return
+            
             for bid, book in results:
                 make_card(scrollable, bid, book)
+            
+            # Re-configure canvas scroll region after adding content
+            scrollable.update_idletasks()
+            canvas.config(scrollregion=canvas.bbox("all"))
 
-        perform_search("", "Title")
+        # --- 4. Wire up Search Button and Initial Load ---
+        ttk.Button(top, text="Search", bootstyle="primary",
+                   command=lambda: perform_search(search_entry.get(), search_type.get())).pack(side="left", padx=10)
+
+        perform_search("", "Title") # Initial display of all books
 
     # -------------------------
-    # Borrow & Profile simplified
+    # Borrow & Profile methods
     # -------------------------
     def _view_borrow_return(self):
+        """Simple borrow/return view."""
         ttk.Label(self.content_frame, text="Borrow / Return Books", font=("Helvetica", 18, "bold")).pack(pady=20)
         form = ttk.Frame(self.content_frame)
         form.pack(pady=10)
+        
         ttk.Label(form, text="Book ID:").grid(row=0, column=0, padx=6)
         entry = ttk.Entry(form, width=12)
         entry.grid(row=0, column=1, padx=6)
+        
         def borrow():
+            """Handles the immediate borrow action from the dedicated view."""
             bid = entry.get().strip()
-            if bid in BOOKS and BOOKS[bid]["available"]:
-                BOOKS[bid]["available"] = False
-                BOOKS[bid]["borrowed_by"] = self.current_user
-                show_info("Success", f"Borrowed {BOOKS[bid]['title']}")
-            else: show_error("Error", "Invalid or unavailable")
+            book = BOOKS.get(bid)
+            
+            if not self.current_user:
+                 show_error("Error", "Please log in to borrow books.")
+                 return
+
+            if book and book["available"]:
+                book["available"] = False
+                book["borrowed_by"] = self.current_user
+                show_info("Success", f"Successfully borrowed: {book['title']}")
+                # Clear the entry after success
+                entry.delete(0, END)
+            else: 
+                show_error("Error", "Invalid ID or book is already borrowed.")
+                
+        def return_book():
+            """Handles the immediate return action from the dedicated view."""
+            bid = entry.get().strip()
+            book = BOOKS.get(bid)
+            
+            if not self.current_user:
+                 show_error("Error", "Please log in.")
+                 return
+                 
+            if book and not book["available"] and book["borrowed_by"] == self.current_user:
+                book["available"] = True
+                book["borrowed_by"] = None
+                show_info("Success", f"Successfully returned: {book['title']}")
+                # Clear the entry after success
+                entry.delete(0, END)
+            else: 
+                show_error("Error", "Invalid ID or you did not borrow this book.")
+
         ttk.Button(form, text="Borrow", bootstyle="danger", command=borrow).grid(row=0, column=2, padx=6)
+        ttk.Button(form, text="Return", bootstyle="success", command=return_book).grid(row=0, column=3, padx=6)
+
 
     def _view_profile(self):
+        """Displays the user's profile and borrowed books."""
         ttk.Label(self.content_frame, text="My Profile", font=("Helvetica", 20, "bold")).pack(pady=15)
         if not self.current_user:
             ttk.Label(self.content_frame, text="Please login first.").pack()
             return
+            
         ttk.Label(self.content_frame, text=f"Welcome, {self.current_user}", font=("Helvetica", 14)).pack(pady=6)
-        ttk.Label(self.content_frame, text="Borrowed Books:", font=("Helvetica", 12, "bold")).pack(pady=(20,0))
+        
+        borrowed_list = []
         for bid,b in BOOKS.items():
             if b.get("borrowed_by")==self.current_user:
-                ttk.Label(self.content_frame, text=f"{bid} - {b['title']}").pack(anchor="w", padx=40)
+                borrowed_list.append(f"{bid} - {b['title']} by {b['author']}")
+        
+        if borrowed_list:
+            ttk.Label(self.content_frame, text="Borrowed Books:", font=("Helvetica", 12, "bold")).pack(pady=(20,0))
+            for item in borrowed_list:
+                 ttk.Label(self.content_frame, text=item).pack(anchor="w", padx=40)
+        else:
+            ttk.Label(self.content_frame, text="You have no books currently borrowed.", font=("Helvetica", 12, "italic")).pack(pady=10)
+
 
     # -------------------------
     # Login Window
     # -------------------------
     def create_login_window(self):
+        """Creates and displays the modal login window."""
         self.login_win = tk.Toplevel(self.root)
         self.login_win.title("Login - CodXCloud")
         self.login_win.geometry("360x260")
         self.login_win.resizable(False, False)
-        self.login_win.protocol("WM_DELETE_WINDOW", self.root.quit)
+        self.login_win.protocol("WM_DELETE_WINDOW", self.root.quit) 
+        
         frm = ttk.Frame(self.login_win, padding=12)
         frm.pack(fill="both", expand=True)
+        
         ttk.Label(frm, text="CodXCloud Login", font=("Helvetica", 16, "bold"), bootstyle="primary").pack(pady=8)
+        
         form = ttk.Frame(frm)
         form.pack(pady=6)
+        
         ttk.Label(form, text="Student ID:").grid(row=0, column=0, sticky="w", padx=6, pady=6)
         self.username_entry = ttk.Entry(form, width=26)
         self.username_entry.grid(row=0, column=1, padx=6, pady=6)
+        
         ttk.Label(form, text="Password:").grid(row=1, column=0, sticky="w", padx=6, pady=6)
         self.password_entry = ttk.Entry(form, width=26, show="*")
         self.password_entry.grid(row=1, column=1, padx=6, pady=6)
+        
         btnf = ttk.Frame(frm); btnf.pack(pady=8)
         ttk.Button(btnf, text="Login", bootstyle="success", command=self._login_action).grid(row=0, column=0, padx=6)
         ttk.Button(btnf, text="Register", bootstyle="info", command=self._register_action).grid(row=0, column=1, padx=6)
 
+        # Set focus to the login window and entry
+        self.login_win.focus_set()
+        self.login_win.grab_set()
+        self.username_entry.focus_set()
+
+
     def _login_action(self):
+        """Authenticates the user and opens the main application."""
         u, p = self.username_entry.get().strip(), self.password_entry.get().strip()
         if USERS.get(u) == p:
             self.current_user = u
             show_info("Welcome", f"Welcome, {u}!")
             self.login_win.destroy()
-            self.root.deiconify()
+            self.root.deiconify() # Show the main window
             self.show_view("search")
         else:
             show_error("Error", "Invalid credentials")
 
     def _register_action(self):
+        """Registers a new user (in memory)."""
         u, p = self.username_entry.get().strip(), self.password_entry.get().strip()
         if not u or not p:
             show_error("Error", "Enter credentials"); return
         if u in USERS:
             show_error("Error", "User exists"); return
-        USERS[u]=p; show_info("Success","Registered! You can login now.")
+            
+        USERS[u]=p
+        show_info("Success","Registered! You can login now.")
+        self.username_entry.delete(0, END)
+        self.password_entry.delete(0, END)
+        self.username_entry.focus_set()
 
     def _logout_action(self):
-        if messagebox.askyesno("Logout", "Logout?"):
+        """Logs out the user and returns to the login screen."""
+        if messagebox.askyesno("Logout", "Are you sure you want to log out?"):
             self.current_user=None
             self.root.withdraw()
             self.create_login_window()
@@ -242,9 +375,3 @@ if __name__ == "__main__":
     root = ttk.Window(themename="cosmo")
     app = CodXCloudApp(root)
     root.mainloop()
-    
-
-
-
-
-
