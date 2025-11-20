@@ -38,12 +38,12 @@ class CodXCloudApp:
 
         # 1. Load the image
         # Replace 'assets/logo.png' with the actual path to your file
-        image_path = "codxcloud logo 3.png"
+        image_path = "codxcloud logo 3 up.png"
         original_image = Image.open(image_path)
 
         # 2. Resize the image (Optional but recommended for headers)
         # Adjust (width, height) as needed. using LANCZOS for high-quality downsampling
-        resized_image = original_image.resize((300, 150), Image.Resampling.LANCZOS)
+        resized_image = original_image.resize((150, 75), Image.Resampling.LANCZOS)
 
         # 3. Convert to PhotoImage and STORE THE REFERENCE
         # We bind it to 'self' so the garbage collector doesn't delete it
@@ -412,5 +412,6 @@ if __name__ == "__main__":
     root = ttk.Window(themename="cosmo")
     app = CodXCloudApp(root)
     root.mainloop()
+
 
 
