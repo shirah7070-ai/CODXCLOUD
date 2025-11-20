@@ -17,30 +17,30 @@ def show_info(title, msg): messagebox.showinfo(title, msg)
 def show_error(title, msg): messagebox.showerror(title, msg)
 
 class CodXCloudApp:
-    def __init__(self, root: ttk.Window):
-        self.root = root
-        self.root.title("CodXCloud - Fullwidth Cards")
-        self.root.geometry("1200x800")
-        self.current_user = None
-        self._card_imgs = []
-
-        self._build_header()
-        self._build_content_area()
-        self.root.withdraw()
-        self.create_login_window()
-
-    def _build_header(self):
-        """Sets up the top header with title and menu."""
+        def _build_header(self):
+        """Sets up the top header with an image logo."""
         header = ttk.Frame(self.root, padding=8)
         header.pack(side="top", fill="x")
 
-        # CodXCloud title turned into REFRESH BUTTON (goes to main/search view)
+        # 1. Load the image
+        # Replace 'assets/logo.png' with the actual path to your file
+        image_path = "codxcloud logo 3.png"
+        original_image = Image.open(image_path)
+
+        # 2. Resize the image (Optional but recommended for headers)
+        # Adjust (width, height) as needed. using LANCZOS for high-quality downsampling
+        resized_image = original_image.resize((300, 150), Image.Resampling.LANCZOS)
+
+        # 3. Convert to PhotoImage and STORE THE REFERENCE
+        # We bind it to 'self' so the garbage collector doesn't delete it
+        self.header_logo = ImageTk.PhotoImage(resized_image)
+
+        # 4. Create the button using the 'image' argument
         title_btn = ttk.Button(
             header,
-            text="CodXCloud",
-            bootstyle="primary-link",   # hyperlink-style, looks like label
-            padding=5,
-            command=lambda: self.show_view("search")  # Refresh back to main view
+            image=self.header_logo,  # Use the stored image reference
+            bootstyle="link",  # 'link' style usually removes button borders
+            command=lambda: self.show_view("search")
         )
         title_btn.pack(side="left", padx=20)
 
@@ -398,3 +398,4 @@ if __name__ == "__main__":
     root = ttk.Window(themename="cosmo")
     app = CodXCloudApp(root)
     root.mainloop()
+
