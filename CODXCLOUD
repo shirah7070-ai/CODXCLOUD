@@ -2,6 +2,8 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import messagebox
+from PIL import Image, ImageTk
+
 
 # Global Data (Simulated Database)
 USERS = {"admin": "admin123", "user1": "password1"}
@@ -17,8 +19,20 @@ def show_info(title, msg): messagebox.showinfo(title, msg)
 def show_error(title, msg): messagebox.showerror(title, msg)
 
 class CodXCloudApp:
-        def _build_header(self):
+    def __init__(self, root: ttk.Window):
+        self.root = root
+        self.root.title("CodXCloud - Fullwidth Cards")
+        self.root.geometry("1200x800")
+        self.current_user = None
+        self._card_imgs = []
+
+        self._build_header()
+        self._build_content_area()
+        self.root.withdraw()
+        self.create_login_window()
+
         """Sets up the top header with an image logo."""
+    def _build_header(self):
         header = ttk.Frame(self.root, padding=8)
         header.pack(side="top", fill="x")
 
@@ -398,4 +412,5 @@ if __name__ == "__main__":
     root = ttk.Window(themename="cosmo")
     app = CodXCloudApp(root)
     root.mainloop()
+
 
