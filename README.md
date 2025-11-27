@@ -81,9 +81,9 @@ pip install Pillow
 
 ## Project Structure
 
-*   `main`: The main entry point for the application (GUI logic).
+*   `main.py`: The main entry point for the application (GUI logic).
 *   `db_setup.py`: Database connection, schema creation, and initial data seeding.
-*   `codxcloud_dvlp/`: Directory containing application assets (images, etc.).
+*   `book_cover/`: Directory containing application assets (images, etc.).
 
 ## Troubleshooting
 
